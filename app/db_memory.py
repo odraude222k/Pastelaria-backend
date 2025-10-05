@@ -1,14 +1,19 @@
-from pydantic import BaseModel
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
-class Produto(BaseModel):
-    id: int
-    nome: str
-    preco: float
 
-db_produtos = [
-    Produto(id=1, nome="Pastel de Carne", preco=8.50),
-    Produto(id=2, nome="Pastel de Queijo", preco=8.00),
-    Produto(id=3, nome="Caldo de Cana", preco=6.00),
-]
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:dudu88260333@localhost:5432/pastelaria_db"
 
-db_carrinho = []
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
