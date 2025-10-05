@@ -1,13 +1,14 @@
 from fastapi import APIRouter,HTTPException
 from ..db_memory import db_produtos, db_carrinho
-from ..schemas.carrinho import Carrinho, ItemCarrinho, ItemCarrinhoBase
+from ..schemas.carrinho import Carrinho, ItemCarrinho, ItemCarrinhoBase,ItemRemover
+
 
 router = APIRouter(prefix="/carrinho",tags=["Carrinho"])
 
 @router.get("/", response_model=Carrinho)
 def ver_carrinho():
     itens_detalhados = []
-    valor_inicial = 0.0
+    valor_total = 0.0
     for item in db_carrinho:
         produto = next((p for p in db_produtos if p.id == item["produto_id"]), None)
         if produto:
@@ -28,13 +29,22 @@ def adicionar_ao_carrinho(item: ItemCarrinhoBase):
     else:
         db_carrinho.append({"produto_id": item.produto_id, "quantidade": item.quantidade})
 
-    return ver_carrinho
+    return ver_carrinho()
 
-@router.delete("/remover/{produto_id}")
-def remover_do_carrinho(produto_id: int):
-    item = next((i for i in db_carrinho if i["produto_id"] == produto_id), None)
-    if not item:
-        raise HTTPException(status_code=404, detail="Item não encontrado no carrinho")
-    db_carrinho.remove(item)
+@router.post("/remover",response_model=Carrinho)
+def remover_do_carrinho(item_a_remover: ItemRemover):
+    item_encontrado = None
+    for item_no_carrinho in db_carrinho:
+        if item_no_carrinho['produto_id'] == item_a_remover.produto_id:
+            item_encontrado = item_no_carrinho
+            break
 
-    return ver_carrinho
+    if not item_encontrado:
+        raise HTTPException(status_code=404, detail="Produto não encontrado no carrinho")
+        
+    if item_a_remover.quantidade >= item_encontrado['quantidade']:
+        db_carrinho.remove(item_encontrado)
+    else:
+        item_encontrado['quantidade'] -= item_a_remover.quantidade
+        
+    return ver_carrinho()
