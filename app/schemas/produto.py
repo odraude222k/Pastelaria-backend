@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict
 
 class ProdutoBase(BaseModel):
     nome: str
+    descricao: str | None = None
     preco: float
 
 class ProdutoCreate(ProdutoBase):

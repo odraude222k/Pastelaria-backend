@@ -8,6 +8,7 @@ class Produto(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, unique=True, index=True)
+    descricao = Column(String, nullable=True) 
     preco = Column(Float)
 
     # Relacionamento para acessar os itens do pedido associados a este produto
