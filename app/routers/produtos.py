@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends,File,UploadFile
 from sqlalchemy.orm import Session
 from typing import List
+import shutil
+import uuid
 
 from ..db_memory import get_db
 from .. import models
@@ -11,6 +13,30 @@ from ..schemas.produto import (
 )
 
 router = APIRouter(prefix="/produtos",tags=["Produtos"])
+
+@router.post("/{produto_id}/upload-imagem/", response_model=ProdutoSchema)
+def upload_imagem_produto(produto_id: int, db: Session = Depends(get_db), file: UploadFile = File(...)):
+    # Busca o produto no banco
+    produto = db.query(models.Produto).filter(models.Produto.id == produto_id).first()
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+
+    # Gera um nome de arquivo único para evitar sobreposição
+    extensao = file.filename.split(".")[-1]
+    nome_arquivo_unico = f"{uuid.uuid4()}.{extensao}"
+    caminho_arquivo = f"static/images/{nome_arquivo_unico}"
+
+    # Salva o arquivo no disco
+    with open(caminho_arquivo, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Salva o caminho do arquivo no banco de dados
+    # O caminho URL será acessível via /static/images/nome_do_arquivo.jpg
+    produto.imagem_url = f"/static/images/{nome_arquivo_unico}"
+    db.commit()
+    db.refresh(produto)
+
+    return produto
 
 @router.get("/", response_model=List[ProdutoSchema])
 def listar_produtos(db: Session = Depends(get_db)):

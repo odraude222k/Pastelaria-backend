@@ -10,7 +10,8 @@ class Produto(Base):
     nome = Column(String, unique=True, index=True)
     descricao = Column(String, nullable=True) 
     preco = Column(Float)
-
+    imagem_url = Column(String, nullable=True)
+    
     # Relacionamento para acessar os itens do pedido associados a este produto
     itens_pedido = relationship("ItemPedido", back_populates="produto")
 
